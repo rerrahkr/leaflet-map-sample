@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ensure full-height parents for `h-full` to work and Leaflet sizing */
+html,
+body,
+#__next {
+  height: 100%;
+}
