@@ -2,135 +2,20 @@
 
 import type * as Leaflet from "leaflet";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import "leaflet-contextmenu/dist/leaflet.contextmenu.min.css";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconRetina from "leaflet/dist/images/marker-icon-2x.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import { createRoot } from "react-dom/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { MarkerPopup } from "./marker-popup";
 
 // Complete type definitions not present in @types/leaflet-contextmenu
 declare module "leaflet" {
   interface MapOptions {
     contextmenuWidth?: number | undefined;
   }
-}
-
-type MarkerPopupFixedContentProps = {
-  title: string;
-  description: string;
-};
-
-function MarkerPopupFixedContent({
-  title,
-  description,
-}: MarkerPopupFixedContentProps): React.JSX.Element {
-  return (
-    <>
-      <h3 className="text-lg font-semibold">{title}</h3>
-      <p className="my-0 text-sm text-gray-600">{description}</p>
-    </>
-  );
-}
-
-type MarkerPopupEditingContentProps = {
-  defaultTitle?: string | undefined;
-  defaultDescription?: string | undefined;
-  onSave: (title: string, description: string) => void;
-  onCancel: () => void;
-};
-
-function MarkerPopupEditingContent({
-  defaultTitle,
-  defaultDescription,
-  onSave,
-  onCancel,
-}: MarkerPopupEditingContentProps): React.JSX.Element {
-  const [title, setTitle] = useState<string>(defaultTitle ?? "");
-  const [description, setDescription] = useState<string>(
-    defaultDescription ?? ""
-  );
-
-  const canSave = (() => {
-    const titleIsValid = title.trim().length > 0;
-
-    return titleIsValid;
-  })();
-
-  return (
-    <>
-      <Input
-        type="text"
-        placeholder="タイトルを入力"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <Textarea
-        placeholder="説明を入力"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        rows={4}
-      />
-      <div className="flex gap-2 justify-end">
-        <Button variant="outline" size="sm" onClick={onCancel}>
-          キャンセル
-        </Button>
-        <Button
-          size="sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            onSave(title, description);
-          }}
-          disabled={!canSave}
-        >
-          保存
-        </Button>
-      </div>
-    </>
-  );
-}
-
-type MarkerPopupProps = {
-  defaultTitle?: string | undefined;
-  defaultDescription?: string | undefined;
-  onSave: (title: string, description: string) => void;
-  onCancel: () => void;
-};
-
-function MarkerPopup({
-  defaultTitle,
-  defaultDescription,
-  onSave,
-  onCancel,
-}: MarkerPopupProps): React.JSX.Element {
-  const [title, setTitle] = useState<string>(defaultTitle ?? "");
-  const [description, setDescription] = useState<string>(
-    defaultDescription ?? ""
-  );
-
-  const [hasSaved, setHasSaved] = useState<boolean>(false);
-
-  return (
-    <div className="w-full max-w-xs py-0 space-y-2">
-      {hasSaved ? (
-        <MarkerPopupFixedContent title={title} description={description} />
-      ) : (
-        <MarkerPopupEditingContent
-          onSave={(newTitle, newDescription) => {
-            setTitle(newTitle);
-            setDescription(newDescription);
-            setHasSaved(true);
-            onSave(newTitle, newDescription);
-          }}
-          onCancel={onCancel}
-        />
-      )}
-    </div>
-  );
 }
 
 type MapComponentProps = {
@@ -189,7 +74,7 @@ export function MapComponent({
 
       const editableLayers = L.featureGroup();
 
-      function handleAddMarker(ev: Leaflet.ContextMenuItemClickEvent) {
+      function addMarker(ev: Leaflet.ContextMenuItemClickEvent) {
         if (isEditingRef.current) {
           console.log(
             "Could not create new marker because other marker is editing"
@@ -199,14 +84,21 @@ export function MapComponent({
 
         const marker = L.marker(ev.latlng).addTo(editableLayers);
 
-        const popupElement = document.createElement("div");
-        const popupRoot = createRoot(popupElement);
-
         function handleSave(title: string, description: string) {
           console.log(`title ${title}, description: ${description}}`);
 
           isEditingRef.current = false;
         }
+
+        mountMarkerPopup(marker, handleSave);
+      }
+
+      function mountMarkerPopup(
+        marker: Leaflet.Marker,
+        onSave: (title: string, description: string) => void
+      ) {
+        const popupElement = document.createElement("div");
+        const popupRoot = createRoot(popupElement);
 
         function removeMarker() {
           marker.remove();
@@ -220,7 +112,7 @@ export function MapComponent({
         }
 
         popupRoot.render(
-          <MarkerPopup onSave={handleSave} onCancel={removeMarker} />
+          <MarkerPopup onSave={onSave} onCancel={removeMarker} />
         );
 
         marker.bindPopup(popupElement, {
@@ -243,8 +135,8 @@ export function MapComponent({
         contextmenuWidth: 140,
         contextmenuItems: [
           {
-            text: "Add Marker",
-            callback: handleAddMarker,
+            text: "Add New Marker",
+            callback: addMarker,
           },
         ],
       }).setView([35.681236, 139.767125], 15);
