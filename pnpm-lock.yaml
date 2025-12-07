@@ -17,15 +17,15 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      immer:
+        specifier: 11.0.1
+        version: 11.0.1
       leaflet:
         specifier: 1.9.4
         version: 1.9.4
       leaflet-contextmenu:
         specifier: 1.4.0
         version: 1.4.0
-      leaflet-draw:
-        specifier: 1.0.4
-        version: 1.0.4
       lucide-react:
         specifier: ^0.556.0
         version: 0.556.0(react@19.2.0)
@@ -41,6 +41,9 @@ importers:
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
+      zustand:
+        specifier: ^5.0.9
+        version: 5.0.9(@types/react@19.2.7)(immer@11.0.1)(react@19.2.0)
     devDependencies:
       '@biomejs/biome':
         specifier: 2.2.0
@@ -54,9 +57,6 @@ importers:
       '@types/leaflet-contextmenu':
         specifier: 1.4.4
         version: 1.4.4
-      '@types/leaflet-draw':
-        specifier: 1.0.13
-        version: 1.0.13
       '@types/node':
         specifier: ^20
         version: 20.19.25
@@ -472,9 +472,6 @@ packages:
   '@types/leaflet-contextmenu@1.4.4':
     resolution: {integrity: sha512-3BcUZceTEHDOu2kD6Is5cQB5z/DIVMPZoN/o5yXGrH0Y4CfWuSpP1Sm6ZHdBMQ+nVtEQXZnIV/GOE4ZEGX39HQ==}
 
-  '@types/leaflet-draw@1.0.13':
-    resolution: {integrity: sha512-YU82kilOaU+wPNbqKCCDfHH3hqepN6XilrBwG/mSeZ/z4ewumaRCOah44s3FMxSu/Aa0SVa3PPJvhIZDUA09mw==}
-
   '@types/leaflet@1.9.21':
     resolution: {integrity: sha512-TbAd9DaPGSnzp6QvtYngntMZgcRk+igFELwR2N99XZn7RXUdKgsXMR+28bUO0rPsWp8MIu/f47luLIQuSLYv/w==}
 
@@ -519,15 +516,15 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
+  immer@11.0.1:
+    resolution: {integrity: sha512-naDCyggtcBWANtIrjQEajhhBEuL9b0Zg4zmlWK2CzS6xCWSE39/vvf4LqnMjUAWHBhot4m9MHCM/Z+mfWhUkiA==}
+
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
     hasBin: true
 
   leaflet-contextmenu@1.4.0:
     resolution: {integrity: sha512-BXASCmJ5bLkuJGDCpWmvGqhZi5AzeOY0IbQalfkgBcMAMfAOFSvD4y0gIQxF/XzEyLkjXaRiUpibVj4+Cf3tUA==}
-
-  leaflet-draw@1.0.4:
-    resolution: {integrity: sha512-rsQ6saQO5ST5Aj6XRFylr5zvarWgzWnrg46zQ1MEOEIHsppdC/8hnN8qMoFvACsPvTioAuysya/TVtog15tyAQ==}
 
   leaflet@1.9.4:
     resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
@@ -708,6 +705,24 @@ packages:
 
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+
+  zustand@5.0.9:
+    resolution: {integrity: sha512-ALBtUj0AfjJt3uNRQoL1tL2tMvj6Gp/6e39dnfT6uzpelGru8v1tPOGBzayOWbPJvujM8JojDk3E1LxeFisBNg==}
+    engines: {node: '>=12.20.0'}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      immer: '>=9.0.6'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
+    peerDependenciesMeta:
+      '@types/react':
+        optional: true
+      immer:
+        optional: true
+      react:
+        optional: true
+      use-sync-external-store:
+        optional: true
 
 snapshots:
 
@@ -996,10 +1011,6 @@ snapshots:
     dependencies:
       '@types/leaflet': 1.9.21
 
-  '@types/leaflet-draw@1.0.13':
-    dependencies:
-      '@types/leaflet': 1.9.21
-
   '@types/leaflet@1.9.21':
     dependencies:
       '@types/geojson': 7946.0.16
@@ -1041,11 +1052,11 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
+  immer@11.0.1: {}
+
   jiti@2.6.1: {}
 
   leaflet-contextmenu@1.4.0: {}
-
-  leaflet-draw@1.0.4: {}
 
   leaflet@1.9.4: {}
 
@@ -1210,3 +1221,9 @@ snapshots:
   typescript@5.9.3: {}
 
   undici-types@6.21.0: {}
+
+  zustand@5.0.9(@types/react@19.2.7)(immer@11.0.1)(react@19.2.0):
+    optionalDependencies:
+      '@types/react': 19.2.7
+      immer: 11.0.1
+      react: 19.2.0

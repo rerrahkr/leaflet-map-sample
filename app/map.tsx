@@ -10,6 +10,7 @@ import iconRetina from "leaflet/dist/images/marker-icon-2x.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import { createRoot } from "react-dom/client";
 import { MarkerPopup } from "./marker-popup";
+import { useMapStore } from "./stores";
 
 // Complete type definitions not present in @types/leaflet-contextmenu
 declare module "leaflet" {
@@ -29,8 +30,6 @@ export function MapComponent({
 }: MapComponentProps): React.JSX.Element {
   const mapRef = useRef<Leaflet.Map | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  const isEditingRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (mapRef.current) {
@@ -75,7 +74,7 @@ export function MapComponent({
       const editableLayers = L.featureGroup();
 
       function addMarker(ev: Leaflet.ContextMenuItemClickEvent) {
-        if (isEditingRef.current) {
+        if (useMapStore.getState().isEditing) {
           console.log(
             "Could not create new marker because other marker is editing"
           );
@@ -87,7 +86,7 @@ export function MapComponent({
         function handleSave(title: string, description: string) {
           console.log(`title ${title}, description: ${description}}`);
 
-          isEditingRef.current = false;
+          useMapStore.getState().finishEditing();
         }
 
         mountMarkerPopup(marker, handleSave);
@@ -103,7 +102,7 @@ export function MapComponent({
         function removeMarker() {
           marker.remove();
 
-          isEditingRef.current = false;
+          useMapStore.getState().finishEditing();
 
           // Wait unmounting until the popup close animation is finished
           setTimeout(() => {
@@ -121,12 +120,13 @@ export function MapComponent({
         });
 
         marker.on("popupclose", () => {
-          if (isEditingRef.current) {
+          if (useMapStore.getState().isEditing) {
             removeMarker();
           }
         });
 
-        isEditingRef.current = true;
+        useMapStore.getState().startEditing();
+
         marker.openPopup();
       }
 
