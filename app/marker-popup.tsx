@@ -2,9 +2,14 @@ import type React from "react";
 import { useState } from "react";
 import "leaflet/dist/leaflet.css";
 import "leaflet-contextmenu/dist/leaflet.contextmenu.min.css";
+import type * as Leaflet from "leaflet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import "leaflet/dist/leaflet.css";
+import "leaflet-contextmenu/dist/leaflet.contextmenu.min.css";
+import { createRoot } from "react-dom/client";
+import { useMapStore } from "./stores";
 
 type MarkerPopupFixedContentProps = {
   title: string;
@@ -117,4 +122,48 @@ export function MarkerPopup({
       )}
     </div>
   );
+}
+
+export function mountMarkerPopup(
+  marker: Leaflet.Marker,
+  onSave: (title: string, description: string) => void
+) {
+  const popupElement = document.createElement("div");
+  const popupRoot = createRoot(popupElement);
+
+  function removeMarker() {
+    marker.remove();
+
+    useMapStore.getState().finishEditing();
+
+    // Wait unmounting until the popup close animation is finished
+    setTimeout(() => {
+      popupRoot.unmount();
+    }, 500);
+  }
+
+  popupRoot.render(
+    <MarkerPopup
+      onSave={(title, description) => {
+        useMapStore.getState().finishEditing();
+        onSave(title, description);
+      }}
+      onCancel={removeMarker}
+    />
+  );
+
+  marker.bindPopup(popupElement, {
+    className: "marker-popup",
+    closeButton: false,
+  });
+
+  marker.on("popupclose", () => {
+    if (useMapStore.getState().isEditing) {
+      removeMarker();
+    }
+  });
+
+  useMapStore.getState().startEditing();
+
+  marker.openPopup();
 }

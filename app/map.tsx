@@ -2,14 +2,13 @@
 
 import type * as Leaflet from "leaflet";
 import type React from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import "leaflet-contextmenu/dist/leaflet.contextmenu.min.css";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconRetina from "leaflet/dist/images/marker-icon-2x.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
-import { createRoot } from "react-dom/client";
-import { MarkerPopup } from "./marker-popup";
+import { mountMarkerPopup } from "./marker-popup";
 import { useMapStore } from "./stores";
 
 // Complete type definitions not present in @types/leaflet-contextmenu
@@ -19,23 +18,24 @@ declare module "leaflet" {
   }
 }
 
-type MapComponentProps = {
-  className?: string;
-  style?: React.CSSProperties;
-};
+async function loadLeaflet(): Promise<typeof Leaflet> {
+  // Dynamically import Leaflet and plugin
+  const L = (await import("leaflet")).default;
 
-export function MapComponent({
-  className,
-  style,
-}: MapComponentProps): React.JSX.Element {
+  // Plugin uses the global L variable, so we need to set it on `window`
+  // biome-ignore lint/suspicious/noExplicitAny: no need to strictly type window.L
+  (window as any).L = L;
+
+  await import("leaflet-contextmenu");
+
+  return L;
+}
+
+function useMap() {
   const mapRef = useRef<Leaflet.Map | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapElementRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (mapRef.current) {
-      return;
-    }
-
     const resizeObserver = new ResizeObserver((entries) => {
       if (entries.length === 0) {
         return;
@@ -43,23 +43,30 @@ export function MapComponent({
 
       mapRef.current?.invalidateSize();
     });
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
+
+    if (mapElementRef.current) {
+      resizeObserver.observe(mapElementRef.current);
     }
 
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  const handleSave = useEffectEvent((title: string, description: string) => {
+    console.log(`title ${title}, description: ${description}}`);
+  });
+
+  useEffect(() => {
+    if (mapRef.current) {
+      return;
+    }
+
+    const container = mapElementRef.current;
+    if (!container) return;
+
     (async () => {
-      const L = await (async () => {
-        // Dynamically import Leaflet and plugin
-        const L = (await import("leaflet")).default;
-
-        // Plugin uses the global L variable, so we need to set it on `window`
-        // biome-ignore lint/suspicious/noExplicitAny: no need to strictly type window.L
-        (window as any).L = L;
-
-        await import("leaflet-contextmenu");
-
-        return L;
-      })();
+      const L = await loadLeaflet();
 
       // Fix default icon paths
       L.Icon.Default.mergeOptions({
@@ -67,9 +74,6 @@ export function MapComponent({
         iconRetinaUrl: iconRetina,
         shadowUrl: iconShadow,
       });
-
-      const container = containerRef.current;
-      if (!container) return;
 
       const editableLayers = L.featureGroup();
 
@@ -82,52 +86,7 @@ export function MapComponent({
         }
 
         const marker = L.marker(ev.latlng).addTo(editableLayers);
-
-        function handleSave(title: string, description: string) {
-          console.log(`title ${title}, description: ${description}}`);
-
-          useMapStore.getState().finishEditing();
-        }
-
         mountMarkerPopup(marker, handleSave);
-      }
-
-      function mountMarkerPopup(
-        marker: Leaflet.Marker,
-        onSave: (title: string, description: string) => void
-      ) {
-        const popupElement = document.createElement("div");
-        const popupRoot = createRoot(popupElement);
-
-        function removeMarker() {
-          marker.remove();
-
-          useMapStore.getState().finishEditing();
-
-          // Wait unmounting until the popup close animation is finished
-          setTimeout(() => {
-            popupRoot.unmount();
-          }, 500);
-        }
-
-        popupRoot.render(
-          <MarkerPopup onSave={onSave} onCancel={removeMarker} />
-        );
-
-        marker.bindPopup(popupElement, {
-          className: "marker-popup",
-          closeButton: false,
-        });
-
-        marker.on("popupclose", () => {
-          if (useMapStore.getState().isEditing) {
-            removeMarker();
-          }
-        });
-
-        useMapStore.getState().startEditing();
-
-        marker.openPopup();
       }
 
       const map = L.map(container, {
@@ -154,12 +113,25 @@ export function MapComponent({
       mapRef.current?.remove();
       mapRef.current = null;
 
-      resizeObserver.disconnect();
-      containerRef.current = null;
+      mapElementRef.current = null;
     };
   }, []);
 
+  return { mapElementRef };
+}
+
+type MapComponentProps = {
+  className?: string;
+  style?: React.CSSProperties;
+};
+
+export function MapComponent({
+  className,
+  style,
+}: MapComponentProps): React.JSX.Element {
+  const { mapElementRef } = useMap();
+
   return (
-    <div id="map" ref={containerRef} className={className} style={style}></div>
+    <div id="map" ref={mapElementRef} className={className} style={style}></div>
   );
 }
