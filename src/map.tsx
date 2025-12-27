@@ -34,6 +34,7 @@ async function loadLeaflet(): Promise<typeof Leaflet> {
 function useMap() {
   const mapRef = useRef<Leaflet.Map | null>(null);
   const mapElementRef = useRef<HTMLDivElement | null>(null);
+  const initializingRef = useRef(false);
 
   useEffect(() => {
     const resizeObserver = new ResizeObserver((entries) => {
@@ -58,15 +59,19 @@ function useMap() {
   });
 
   useEffect(() => {
-    if (mapRef.current) {
-      return;
-    }
-
     const container = mapElementRef.current;
     if (!container) return;
 
+    if (mapRef.current || initializingRef.current) return;
+
+    initializingRef.current = true;
+
     (async () => {
       const L = await loadLeaflet();
+
+      if (!initializingRef.current || mapRef.current) {
+        return;
+      }
 
       // Fix default icon paths
       L.Icon.Default.mergeOptions({
@@ -110,10 +115,11 @@ function useMap() {
     })();
 
     return () => {
-      mapRef.current?.remove();
-      mapRef.current = null;
-
-      mapElementRef.current = null;
+      initializingRef.current = false;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
     };
   }, []);
 
