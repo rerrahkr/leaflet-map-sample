@@ -5,9 +5,6 @@ import type React from "react";
 import { useEffect, useEffectEvent, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import "leaflet-contextmenu/dist/leaflet.contextmenu.min.css";
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconRetina from "leaflet/dist/images/marker-icon-2x.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
 import { mountMarkerPopup } from "./marker-popup";
 import { useMapStore } from "./stores";
 
@@ -72,13 +69,6 @@ function useMap() {
       if (!initializingRef.current || mapRef.current) {
         return;
       }
-
-      // Fix default icon paths
-      L.Icon.Default.mergeOptions({
-        iconUrl: icon,
-        iconRetinaUrl: iconRetina,
-        shadowUrl: iconShadow,
-      });
 
       const editableLayers = L.featureGroup();
 
