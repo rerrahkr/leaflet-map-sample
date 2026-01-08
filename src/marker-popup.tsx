@@ -9,7 +9,34 @@ import { Textarea } from "@/components/ui/textarea";
 import "leaflet/dist/leaflet.css";
 import "leaflet-contextmenu/dist/leaflet.contextmenu.min.css";
 import { createRoot } from "react-dom/client";
+import { GoReport } from "react-icons/go";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./components/ui/dialog";
+import { cn } from "./lib/utils";
 import { useMapStore } from "./stores";
+
+const DELETE_REASONS = [
+  "inappropriate",
+  "spam",
+  "duplicate",
+  "incorrect",
+] as const;
+
+type DeleteReason = (typeof DELETE_REASONS)[number];
+
+const DELETE_REASON_TEXT: Readonly<Record<DeleteReason, string>> = {
+  inappropriate: "不適切な内容",
+  spam: "スパム",
+  duplicate: "重複",
+  incorrect: "誤った情報",
+};
 
 type MarkerPopupFixedContentProps = {
   title: string;
@@ -20,10 +47,82 @@ function MarkerPopupFixedContent({
   title,
   description,
 }: MarkerPopupFixedContentProps): React.JSX.Element {
+  const [dialogIsOpen, setDialogIsOpen] = useState<boolean>(false);
+  const [deleteReason, setSelectedReason] = useState<DeleteReason | undefined>(
+    undefined
+  );
+
+  function handleSubmit() {
+    if (deleteReason === undefined) {
+      return;
+    }
+
+    console.log(`Accept deletion request "${title}": ${deleteReason}`);
+
+    toast.success(`「${title}」の削除依頼を受け付けました`, {
+      description: `削除理由: ${DELETE_REASON_TEXT[deleteReason]}`,
+    });
+    setDialogIsOpen(false);
+    setSelectedReason(undefined);
+  }
+
+  function handleCancel() {
+    setDialogIsOpen(false);
+    setSelectedReason(undefined);
+  }
+
   return (
     <>
+      <Dialog open={dialogIsOpen} onOpenChange={setDialogIsOpen}>
+        <DialogContent className="z-[2000]">
+          <DialogHeader>
+            <DialogTitle>削除を依頼</DialogTitle>
+            <DialogDescription>
+              削除を依頼する理由を選択してください
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {DELETE_REASONS.map((reason) => (
+              <label
+                key={reason}
+                className="flex items-center gap-3 cursor-pointer"
+              >
+                <input
+                  type="radio"
+                  name="reason"
+                  value={reason}
+                  checked={deleteReason === reason}
+                  onChange={() => setSelectedReason(reason)}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm">{DELETE_REASON_TEXT[reason]}</span>
+              </label>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancel}>
+              キャンセル
+            </Button>
+            <Button onClick={handleSubmit} disabled={!deleteReason}>
+              送信
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <h3 className="text-lg font-semibold">{title}</h3>
       <p className="my-0 text-sm text-gray-600">{description}</p>
+      <button
+        type="button"
+        onClick={() => setDialogIsOpen(true)}
+        className={cn(
+          "mt-2 flex items-center gap-1 cursor-pointer",
+          "text-gray-500 hover:text-red-400 transition-colors duration-300"
+        )}
+      >
+        <GoReport />
+        <span className="text-xs">削除を依頼する</span>
+      </button>
     </>
   );
 }
