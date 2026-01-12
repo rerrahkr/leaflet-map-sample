@@ -1,5 +1,3 @@
-"use client";
-
 import type * as Leaflet from "leaflet";
 import type React from "react";
 import { useEffect, useEffectEvent, useRef } from "react";
@@ -31,7 +29,6 @@ async function loadLeaflet(): Promise<typeof Leaflet> {
 function useMap() {
   const mapRef = useRef<Leaflet.Map | null>(null);
   const mapElementRef = useRef<HTMLDivElement | null>(null);
-  const initializingRef = useRef(false);
 
   useEffect(() => {
     const resizeObserver = new ResizeObserver((entries) => {
@@ -57,16 +54,14 @@ function useMap() {
 
   useEffect(() => {
     const container = mapElementRef.current;
-    if (!container) return;
-
-    if (mapRef.current || initializingRef.current) return;
-
-    initializingRef.current = true;
+    if (!container || mapRef.current) {
+      return;
+    }
 
     (async () => {
       const L = await loadLeaflet();
 
-      if (!initializingRef.current || mapRef.current) {
+      if (mapRef.current) {
         return;
       }
 
@@ -105,7 +100,6 @@ function useMap() {
     })();
 
     return () => {
-      initializingRef.current = false;
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -127,7 +121,5 @@ export function MapComponent({
 }: MapComponentProps): React.JSX.Element {
   const { mapElementRef } = useMap();
 
-  return (
-    <div id="map" ref={mapElementRef} className={className} style={style}></div>
-  );
+  return <div ref={mapElementRef} className={className} style={style}></div>;
 }
