@@ -187,6 +187,7 @@ function MarkerPopupEditingContent({
 type MarkerPopupProps = {
   defaultTitle?: string | undefined;
   defaultDescription?: string | undefined;
+  initiallyEditing?: boolean | undefined;
   onSave: (title: string, description: string) => void;
   onCancel: () => void;
 };
@@ -194,6 +195,7 @@ type MarkerPopupProps = {
 export function MarkerPopup({
   defaultTitle,
   defaultDescription,
+  initiallyEditing = true,
   onSave,
   onCancel,
 }: MarkerPopupProps): React.JSX.Element {
@@ -202,7 +204,7 @@ export function MarkerPopup({
     defaultDescription ?? ""
   );
 
-  const [hasSaved, setHasSaved] = useState<boolean>(false);
+  const [hasSaved, setHasSaved] = useState<boolean>(!initiallyEditing);
 
   return (
     <div className="w-full max-w-xs py-0 space-y-2">
@@ -223,10 +225,29 @@ export function MarkerPopup({
   );
 }
 
+type MountOptions = {
+  /** Default title for the marker popup */
+  defaultTitle?: string | undefined;
+  /** Default description for the marker popup */
+  defaultDescription?: string | undefined;
+  /**
+   * Callback function called when the marker is saved.
+   * If undefined, the popup will be in read-only mode.
+   */
+  onSave?: ((title: string, description: string) => void) | undefined;
+};
+
+/**
+ * Mount a popup to the given marker.
+ * @param marker A marker to mount the popup.
+ * @param options Mount options.
+ */
 export function mountMarkerPopup(
   marker: Leaflet.Marker,
-  onSave: (title: string, description: string) => void
+  options: MountOptions = {}
 ) {
+  const { defaultTitle, defaultDescription, onSave } = options;
+
   const popupElement = document.createElement("div");
   const popupRoot = createRoot(popupElement);
 
@@ -243,9 +264,12 @@ export function mountMarkerPopup(
 
   popupRoot.render(
     <MarkerPopup
+      defaultTitle={defaultTitle}
+      defaultDescription={defaultDescription}
+      initiallyEditing={onSave !== undefined}
       onSave={(title, description) => {
         useMapStore.getState().finishEditing();
-        onSave(title, description);
+        onSave?.(title, description);
       }}
       onCancel={removeMarker}
     />
@@ -262,7 +286,9 @@ export function mountMarkerPopup(
     }
   });
 
-  useMapStore.getState().startEditing();
+  if (onSave !== undefined) {
+    useMapStore.getState().startEditing();
 
-  marker.openPopup();
+    marker.openPopup();
+  }
 }
